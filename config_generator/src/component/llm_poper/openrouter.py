@@ -13,7 +13,7 @@ class OpenRouterProvider(AbstractLLMPoper):
   
   def pop_text_models(self):
     all_models = list_all_model("https://openrouter.ai/api/v1/models")
-    excluded_models = self.config.get("exclude-models", [])
+    excluded_models = self.config.get("exclude-models", []) or []
     list = []
     for model in all_models:
       if model["id"] not in excluded_models:

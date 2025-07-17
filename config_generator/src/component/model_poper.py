@@ -2,13 +2,16 @@ from .llm_poper.openai import OpenAIProvider
 from .llm_poper.google import GeminiAiProvider
 from .llm_poper.mistral import MistralAiProvider
 from .llm_poper.openrouter import OpenRouterProvider
-from .llm_poper.copilot import GitHubCopilotProvider
+#from .llm_poper.copilot import GitHubCopilotProvider
 from .llm_poper.groq import GroqProvider
 from .llm_poper.anthropic import AnthropicProvider
 from .llm_poper.togetherai import TogetherAiProvider
 from .abstract_llm_poper import AbstractLLMPoper
 
 import asyncio
+import logging
+
+log = logging.getLogger(__name__)
 
 def create_model_list() -> list:
   return asyncio.run(_create_model_list())
@@ -25,7 +28,7 @@ async def _create_model_list() -> list:
 
   all_providers = [
     OpenAIProvider(),
-    GitHubCopilotProvider(),
+    #GitHubCopilotProvider(),
     AnthropicProvider(),
     GeminiAiProvider(),
     MistralAiProvider(),
@@ -37,12 +40,22 @@ async def _create_model_list() -> list:
   tasks = [asyncio.create_task(_do_pop(provider)) for provider in all_providers]
 
   for result in asyncio.as_completed(tasks):
-    model_list += await result # This will raise an exception if the task failed
+    try:
+      models = await result
+      model_list += models
+    except Exception as e:
+      log.error(f"Failed to get models from a provider: {e}")
+      # Continue with other providers instead of crashing
 
   return model_list
 
 async def _do_pop(provider: AbstractLLMPoper) -> list:
-  text_models = provider.pop_text_models()
-  embedding_models = provider.pop_embedding_models()
-  image_models = provider.pop_image_models()
-  return text_models + embedding_models + image_models
+  try:
+    text_models = provider.pop_text_models()
+    embedding_models = provider.pop_embedding_models()
+    image_models = provider.pop_image_models()
+    return text_models + embedding_models + image_models
+  except Exception as e:
+    provider_name = provider.__class__.__name__
+    log.error(f"Failed to get models from {provider_name}: {e}")
+    return []  # Return empty list instead of crashing

@@ -19,7 +19,7 @@ class OpenAIProvider(AbstractLLMPoper):
       all_models = list_all_model(
         "https://api.openai.com/v1/models",
         auth_header={"Authorization": f"Bearer {self.config["api-key"]}"})
-      excluded_models = self.config.get("exclude-models", [])
+      excluded_models = self.config.get("exclude-models", []) or []
       for model in all_models:
         if model["id"] not in excluded_models:
           self._models.append(model)
